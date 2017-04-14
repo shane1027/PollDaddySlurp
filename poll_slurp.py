@@ -36,8 +36,8 @@ oldIP = "0.0.0.0"
 newIP = "0.0.0.0"
 tor_URL = 'https://check.torproject.org'
 PROXY_PORT = 9050
-proxies = { 'http': 'socks5://127.0.0.1:{}'.format(PROXY_PORT),
-        'https': 'socks5://127.0.0.1:{}'.format(PROXY_PORT) }
+proxies = { 'http': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT),
+        'https': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT) }
 
 
 
