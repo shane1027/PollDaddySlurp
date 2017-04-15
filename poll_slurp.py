@@ -9,8 +9,11 @@
 # TorCtl lib available @ https://github.com/aaronsw/pytorctl   (pip install)  |
 ###############################################################################
 
-import requests, warnings, time, random
-from TorCtl import TorCtl
+import requests, warnings, time, random, io
+import stem.process
+from stem import Signal
+from stem.util import term
+from stem.control import Controller
 from BeautifulSoup import BeautifulSoup
 import ast      # used to convert string to dict
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -36,6 +39,7 @@ oldIP = "0.0.0.0"
 newIP = "0.0.0.0"
 tor_URL = 'https://check.torproject.org'
 PROXY_PORT = 9050
+SOCKS_PORT = PROXY_PORT
 proxies = { 'http': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT),
         'https': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT) }
 
@@ -74,6 +78,19 @@ def choose_useragent():
     k = random.randint(0, len(userAgents)-1)
     currentAgent = userAgents[k]
 
+def print_bootstrap_lines(line):
+    if "Bootstrapped " in line:
+        print(term.format(line, term.Color.BLUE))
+
+def start_tor():
+    tor_process = stem.process.launch_tor_with_config(
+      config = {
+	'SocksPort': str(SOCKS_PORT),
+	'ExitNodes': '{ru}',
+      },
+      init_msg_handler = print_bootstrap_lines,
+    )
+
 def check_tor():
     try:
         tor_response = requests.get(tor_URL, proxies=proxies)
@@ -90,10 +107,9 @@ def check_tor():
 
 def scramble_ip():
     def renew_connection():
-        conn = TorCtl.connect(controlAddr="127.0.0.1", controlPort=9051,
-                passphrase="alpine")
-        conn.send_signal("NEWNYM")
-        conn.close()
+        with Controller.from_port(port = 9051) as controller:
+            controller.authenticate(password="alpine")
+            controller.signal(Signal.NEWNYM)
     global oldIP
     global newIP
     if oldIP == "0.0.0.0":
@@ -130,6 +146,9 @@ def build_URL(sending_keys, poll, option):
 
 
 open_useragents()
+##TODO: check if Tor is already running and return that as process id, or
+## terminate the process and start a new one
+start_tor()
 check_tor()
 scramble_ip()
 for x in range(0, VOTE_COUNT+1):
