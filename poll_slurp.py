@@ -15,7 +15,7 @@ from stem import Signal
 from stem.util import term
 from stem.control import Controller
 from termcolor import colored, cprint
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import ast      # used to convert string to dict
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 # no ssl verification for a voting bot, shush you darn warnings!!
