@@ -11,6 +11,7 @@
 
 import requests, warnings, time, random, io
 import stem.process
+from proxylist import ProxyList
 from stem import Signal
 from stem.util import term
 from stem.control import Controller
@@ -159,6 +160,7 @@ def build_URL(sending_keys, poll, option):
 open_useragents()
 ##TODO: check if Tor is already running and return that as process id, or
 ## terminate the process and start a new one
+# requirements.txt
 #start_tor(USE_TORRC)
 
 start = time.time()
@@ -171,14 +173,17 @@ print "Size : ", proxy_list_length
 
 
 
-for x in range(10,proxy_list_length):
+for x in range(250,proxy_list_length):
     try:
         output = push_vote(POLL_NUM, POLL_OPTION, proxies[x])
     except requests.exceptions.ProxyError:
         cprint("Dead Proxy :(", 'red', 'on_white')
     except requests.exceptions.ConnectionError:
         cprint("Proxy can't talk to PollDaddy :(", 'red', 'on_white')
+    except AttributeError:
+        cprint("Proxy request timed out :(", 'red', 'on_white')
     else:
+        pass
         revote_status = "revoted" in output.url
         #print output.url
         if "voted" in output.url:
@@ -186,9 +191,10 @@ for x in range(10,proxy_list_length):
                 cprint("Vote number {} successfully submitted!".format(vote_num),
                         'green')
                 vote_num += 1
+            else:
+                cprint("Locked out - renewing Tor exit node...", 'red')
         else:
             cprint("Locked out - renewing Tor exit node...", 'red')
-
 # test_url = 'http://ipv4.icanhazip.com'
 #
 # while True:
