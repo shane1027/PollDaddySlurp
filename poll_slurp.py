@@ -16,6 +16,7 @@ from stem.util import term
 from stem.control import Controller
 from termcolor import colored, cprint
 from BeautifulSoup import BeautifulSoup
+from http_request_randomizer.requests.proxy.requestProxy import RequestProxy
 import ast      # used to convert string to dict
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 # no ssl verification for a voting bot, shush you darn warnings!!
@@ -42,12 +43,12 @@ tor_URL = 'https://check.torproject.org'
 PROXY_PORT = 9050
 SOCKS_PORT = PROXY_PORT
 USE_TORRC = 1
-proxies = { 'http': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT),
-        'https': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT) }
+#proxies = { 'http': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT),
+        #'https': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT) }
 
 
 
-def push_vote(poll, option):
+def push_vote(poll, option, proxy):
     s = requests.Session()
     choose_useragent();
     header = {'Referer': URL + str(poll) + '/', 'Accept':
@@ -55,7 +56,9 @@ def push_vote(poll, option):
     'User-Agent': currentAgent, 'Upgrade-Insecure-Requests': '1',
     'Accept-Encoding': 'gzip, deflate', 'Accept-Language': 'en-US,en;q=0.8'}
     s.headers.update(header)
-    response = s.get(URL + str(poll) + "/", verify=False, proxies=proxies)
+    built_proxy = { 'http': proxy, 'https': proxy}
+    response = s.get(URL + str(poll) + "/", verify=False, proxies=built_proxy,
+            timeout=10)
     c = response.content
     soup = BeautifulSoup(c)
     samples = soup.find("a", class_var).attrs
@@ -65,7 +68,8 @@ def push_vote(poll, option):
     key_dict = ast.literal_eval(key_dict_container[1])
     key_dict['pz'] = str(pz)
     vote_URL = build_URL(key_dict, poll, option)
-    vote_response = s.get(vote_URL, verify=False, proxies=proxies)
+    vote_response = s.get(vote_URL, verify=False, proxies=built_proxy,
+            timeout=10)
     s.cookies.clear()
     return vote_response
 
@@ -156,64 +160,61 @@ open_useragents()
 ##TODO: check if Tor is already running and return that as process id, or
 ## terminate the process and start a new one
 #start_tor(USE_TORRC)
-check_tor()
-scramble_ip()
-for x in range(0, VOTE_COUNT+1):
-    output = push_vote(POLL_NUM, POLL_OPTION)
-    vote_status = "revoted" in output.url
-    print output.url
-    if (vote_status == 0):
-        cprint("Vote number {} successfully submitted!".format(vote_num),
-                'green')
-        vote_num += 1
-        scramble_ip()
+
+start = time.time()
+req_proxy = RequestProxy()
+print "Initialization took: {0} sec".format((time.time() - start))
+proxies = req_proxy.get_proxy_list()
+print " ALL = ", proxies
+proxy_list_length = len(req_proxy.get_proxy_list())
+print "Size : ", proxy_list_length
+
+
+
+for x in range(10,proxy_list_length):
+    try:
+        output = push_vote(POLL_NUM, POLL_OPTION, proxies[x])
+    except requests.exceptions.ProxyError:
+        cprint("Dead Proxy :(", 'red', 'on_white')
+    except requests.exceptions.ConnectionError:
+        cprint("Proxy can't talk to PollDaddy :(", 'red', 'on_white')
     else:
-        cprint("Locked out - renewing Tor exit node...", 'red')
-        scramble_ip()
+        revote_status = "revoted" in output.url
+        #print output.url
+        if "voted" in output.url:
+            if (revote_status == 0):
+                cprint("Vote number {} successfully submitted!".format(vote_num),
+                        'green')
+                vote_num += 1
+        else:
+            cprint("Locked out - renewing Tor exit node...", 'red')
+
+# test_url = 'http://ipv4.icanhazip.com'
+#
+# while True:
+#     start = time.time()
+#     request = req_proxy.generate_proxied_request(test_url)
+#     print "Proxied Request Took: {0} sec => Status: {1}".format((time.time() - start), request.__str__())
+#     if request is not None:
+#         print "\t Response: ip={0}".format(u''.join(request.text).encode('utf-8'))
+#
+#         output = push_vote(POLL_NUM, POLL_OPTION)
+#         revote_status = "revoted" in output.url
+#         print output.url
+#         if "voted" in output.url:
+#             if (revote_status == 0):
+#                 cprint("Vote number {} successfully submitted!".format(vote_num),
+#                         'green')
+#                 vote_num += 1
+#         else:
+#             cprint("Locked out - renewing Tor exit node...", 'red')
+#     print "Proxy List Size: ", len(req_proxy.get_proxy_list())
+#
+#     print"-> Going to sleep.."
+#     time.sleep(1)
 
 
 
 
 
-#http://polls.polldaddy.com/vote-js.php?p=9720163&b=2&a=44443196,&o=&va=0&cookie=0&n=3e6ac658d5|306&url=http%3A//sportsradiodetroit.com/2017/04/09/final-four-detroits-favorite-female-personality-contest-2/
-
-#https://polldaddy.com/vote.php?va=10&pt=0&r=2&p=9720163&a=44443196%2C&o=&t=1100&token=a4e582f5d0aceb058a4e72c2dbac0cd6&pz=97
-
-
-#   GET /vote.php?va=10&pt=0&r=2&p=9720163&a=44443196%2C&o=&t=1100&token=a4e582f5d0aceb058a4e72c2dbac0cd6&pz=979 HTTP/1.1
-#   Host: polldaddy.com
-#   User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0
-#   Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-#   Accept-Language: en-US,en;q=0.5
-#   Accept-Encoding: gzip, deflate, br
-#   Referer: https://polldaddy.com/poll/9720163/
-#   Cookie: __utma=182033702.54197870.1492119988.1492119988.1492119988.1; __utmz=182033702.1492119988.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmc=182033702; __utmb=182033702.1.10.1492119988; PD_REQ_AUTH=ebf4ec5fc85249d0ea0c90e24550268e; __utmt=1; __utmt_b=1; PDjs_poll_9720163_1=1492120016196
-#   Connection: keep-alive
-#   Upgrade-Insecure-Requests: 1
-
-
-
-
-
-# GET /vote-js.php?p=9720163&b=2&a=44443196,&o=&va=0&cookie=0&n=3e6ac658d5|306&url=http%3A//sportsradiodetroit.com/2017/04/09/final-four-detroits-favorite-female-personality-contest-2/ HTTP/1.1
-# Host: polls.polldaddy.com
-# User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0
-# Accept: */*
-# Accept-Language: en-US,en;q=0.5
-# Accept-Encoding: gzip, deflate
-# Referer: http://sportsradiodetroit.com/2017/04/09/final-four-detroits-favorite-female-personality-contest-2/
-# Cookie: __utma=182033702.1741471858.1492119006.1492119006.1492119006.1; __utmz=182033702.1492119006.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); PD_poll_9720163_1=1492099887; __utmc=182033702; PD_REQ_AUTH=a564aeec55fce15ff21e2d537693b077; __utmb=182033702.1.10.1492119006; __utmt=1; __utmt_b=1
-# Connection: keep-alive
-
-
-# GET /vote.php?va=10&pt=0&r=0&p=9720163&a=44443196%2C&o=&t=36024&token=4a8fb3264f2893dfe896167f80d621b3&pz=17 HTTP/1.1
-# Host: polldaddy.com
-# User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:51.0) Gecko/20100101 Firefox/51.0
-# Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-# Accept-Language: en-US,en;q=0.5
-# Accept-Encoding: gzip, deflate, br
-# Referer: https://polldaddy.com/poll/9720163/
-# Cookie: __utma=108186013.1171067445.1491972247.1491972247.1491972247.1; __utmb=108186013.1.9.1491972247; __utmz=108186013.1491972247.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmc=108186013; PD_REQ_AUTH=3dcf2b0280f55bd18d0ac8c1cf20e8c3; __utmt=1; __utmt_b=1
-# Connection: keep-alive
-# Upgrade-Insecure-Requests: 1
 
