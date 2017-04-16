@@ -16,7 +16,7 @@ from stem import Signal
 from stem.util import term
 from stem.control import Controller
 from termcolor import colored, cprint
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from http_request_randomizer.requests.proxy.requestProxy import RequestProxy
 import ast      # used to convert string to dict
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -165,7 +165,7 @@ open_useragents()
 
 start = time.time()
 req_proxy = ProxyList()
-req_proxy.load_file('proxies.txt')
+req_proxy.load_file('new_ips.txt')
 
 
 for x in range(0, len(req_proxy)):
