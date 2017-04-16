@@ -61,12 +61,12 @@ def push_vote(poll, option, proxy):
     response = s.get(URL + str(poll) + "/", verify=False, proxies=built_proxy,
             timeout=10)
     c = response.content
-    soup = BeautifulSoup(c)
+    soup = BeautifulSoup(c, "lxml")
     samples = soup.find("a", class_var).attrs
     hidden_pz = soup.find(type="hidden").attrs
-    pz = hidden_pz[2][1]
-    key_dict_container = samples[1]
-    key_dict = ast.literal_eval(key_dict_container[1])
+    pz = hidden_pz['value']
+    key_dict_container = samples['data-vote']
+    key_dict = ast.literal_eval(key_dict_container)
     key_dict['pz'] = str(pz)
     vote_URL = build_URL(key_dict, poll, option)
     vote_response = s.get(vote_URL, verify=False, proxies=built_proxy,
@@ -187,9 +187,12 @@ for x in range(0, len(req_proxy)):
                         'green')
                 vote_num += 1
             else:
-                cprint("Locked out - renewing Tor exit node...", 'red')
+                cprint("Vote was denied...", 'red')
+            cprint("Waiting 20 seconds until casting next vote...", "white", "on_blue")
+            time.sleep(20)
         else:
-            cprint("Locked out - renewing Tor exit node...", 'red')
+            cprint("Vote URL error.  Are cookies in use?", 'red')
+
 # test_url = 'http://ipv4.icanhazip.com'
 #
 # while True:
