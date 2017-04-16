@@ -14,6 +14,7 @@ import stem.process
 from stem import Signal
 from stem.util import term
 from stem.control import Controller
+from termcolor import colored, cprint
 from BeautifulSoup import BeautifulSoup
 import ast      # used to convert string to dict
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -40,6 +41,7 @@ newIP = "0.0.0.0"
 tor_URL = 'https://check.torproject.org'
 PROXY_PORT = 9050
 SOCKS_PORT = PROXY_PORT
+USE_TORRC = 1
 proxies = { 'http': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT),
         'https': 'socks5h://127.0.0.1:{}'.format(PROXY_PORT) }
 
@@ -82,14 +84,19 @@ def print_bootstrap_lines(line):
     if "Bootstrapped " in line:
         print(term.format(line, term.Color.BLUE))
 
-def start_tor():
-    tor_process = stem.process.launch_tor_with_config(
-      config = {
-	'SocksPort': str(SOCKS_PORT),
-	'ExitNodes': '{ru}',
-      },
-      init_msg_handler = print_bootstrap_lines,
-    )
+def start_tor(config_state):
+    if (config_state):
+        tor_process = stem.process.launch_tor_with_config(
+          config = {
+            'SocksPort': str(SOCKS_PORT),
+            'ExitNodes': '{us}',
+            'ControlPort': '9051'
+          },
+          init_msg_handler = print_bootstrap_lines,
+        )
+    else:
+        tor_process = stem.process.launch_tor(init_msg_handler =
+                print_bootstrap_lines)
 
 def check_tor():
     try:
@@ -100,7 +107,7 @@ def check_tor():
         exit(1)
     else:
         if ("Congratulations" in tor_response.text):
-            print "Connected to the Tor network."
+            cprint("Connected to the Tor network.", 'green')
         else:
             print "Connected to Socks5 proxy but can't reach the Tor network!"
             exit(1)
@@ -148,18 +155,20 @@ def build_URL(sending_keys, poll, option):
 open_useragents()
 ##TODO: check if Tor is already running and return that as process id, or
 ## terminate the process and start a new one
-start_tor()
+#start_tor(USE_TORRC)
 check_tor()
 scramble_ip()
 for x in range(0, VOTE_COUNT+1):
     output = push_vote(POLL_NUM, POLL_OPTION)
     vote_status = "revoted" in output.url
-    if (vote_status):
-        print "Vote number {} successfully submitted!".format(vote_num)
+    print output.url
+    if (vote_status == 0):
+        cprint("Vote number {} successfully submitted!".format(vote_num),
+                'green')
         vote_num += 1
         scramble_ip()
     else:
-        print "Locked out - renewing Tor exit node..."
+        cprint("Locked out - renewing Tor exit node...", 'red')
         scramble_ip()
 
 
