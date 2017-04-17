@@ -5,11 +5,14 @@
 # compatibility to one or the other using 2to3
 
 echo 'building list, please wait a min... some garbage may come up periodically'
-python find_proxies.py
+python find_proxies.py 2&> /dev/null
 regex="//([0-9]*.[0-9]*.[0-9]*.[0-9]*:[0-9]*)"
 
 cat proxies.txt | grep -oE $regex | sed "s/s//g" | sed "s|/||g" >> proxy_formatted.txt
 
 echo 'built formatted live proxy list!'
+read lines words chars filename <<< $(wc proxy_formatted.txt)
 
-sudo python2 poll_slurp.py
+echo 'starting voting process using ' $lines ' live proxies...'
+
+python2 poll_slurp.py
