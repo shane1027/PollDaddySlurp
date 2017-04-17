@@ -165,7 +165,7 @@ open_useragents()
 
 start = time.time()
 req_proxy = ProxyList()
-req_proxy.load_file('new_ips.txt')
+req_proxy.load_file('proxy_formatted.txt')
 
 
 for x in range(0, len(req_proxy)):
@@ -177,6 +177,8 @@ for x in range(0, len(req_proxy)):
         cprint("Proxy can't talk to PollDaddy :(", 'red', 'on_white')
     except AttributeError:
         cprint("Proxy request timed out :(", 'red', 'on_white')
+    except requests.exceptions.ReadTimeout:
+        cprint("Vote request timed out :(", 'red', 'on_white')
     else:
         pass
         revote_status = "revoted" in output.url
@@ -188,36 +190,10 @@ for x in range(0, len(req_proxy)):
                 vote_num += 1
             else:
                 cprint("Vote was denied...", 'red')
-            cprint("Waiting 20 seconds until casting next vote...", "white", "on_blue")
-            time.sleep(20)
+            #cprint("Waiting 20 seconds until casting next vote...", "white", "on_blue")
+            #time.sleep(20)
         else:
             cprint("Vote URL error.  Are cookies in use?", 'red')
-
-# test_url = 'http://ipv4.icanhazip.com'
-#
-# while True:
-#     start = time.time()
-#     request = req_proxy.generate_proxied_request(test_url)
-#     print "Proxied Request Took: {0} sec => Status: {1}".format((time.time() - start), request.__str__())
-#     if request is not None:
-#         print "\t Response: ip={0}".format(u''.join(request.text).encode('utf-8'))
-#
-#         output = push_vote(POLL_NUM, POLL_OPTION)
-#         revote_status = "revoted" in output.url
-#         print output.url
-#         if "voted" in output.url:
-#             if (revote_status == 0):
-#                 cprint("Vote number {} successfully submitted!".format(vote_num),
-#                         'green')
-#                 vote_num += 1
-#         else:
-#             cprint("Locked out - renewing Tor exit node...", 'red')
-#     print "Proxy List Size: ", len(req_proxy.get_proxy_list())
-#
-#     print"-> Going to sleep.."
-#     time.sleep(1)
-
-
 
 
 
