@@ -4,6 +4,7 @@
 # different versions of python (thus can't be merged) and i'm too lazy to bring
 # compatibility to one or the other using 2to3
 
+echo 'building list, please wait a min... some garbage may come up periodically'
 python find_proxies.py
 regex="//([0-9]*.[0-9]*.[0-9]*.[0-9]*:[0-9]*)"
 
