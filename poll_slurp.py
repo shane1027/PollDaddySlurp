@@ -25,8 +25,8 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # Voting related variables
 URL = 'https://polldaddy.com/poll/'
-POLL_NUM = 9720163
-POLL_OPTION = 44443196
+POLL_NUM = 9729175
+POLL_OPTION = 44486461
 VOTE_COUNT = 1000
 DELAY = None
 vote_num = 1
