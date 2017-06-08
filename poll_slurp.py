@@ -129,14 +129,14 @@ def scramble_ip():
         oldText = requests.get("http://icanhazip.com/", proxies=proxies)
         oldIP = oldText.content.rstrip()
     else:
-	oldText = requests.get("http://icanhazip.com/", proxies=proxies)
+        oldText = requests.get("http://icanhazip.com/", proxies=proxies)
         oldIP = oldText.content.rstrip()
-	renew_connection()
-	newText = requests.get("http://icanhazip.com/", proxies=proxies)
+        renew_connection()
+        newText = requests.get("http://icanhazip.com/", proxies=proxies)
         newIP = newText.content.rstrip()
     while oldIP == newIP:
         #time.sleep(3)
-    	newText = requests.get("http://icanhazip.com/", proxies=proxies)
+        newText = requests.get("http://icanhazip.com/", proxies=proxies)
         newIP = newText.content.rstrip()
     if (newIP == '0.0.0.0'):
         print "IP address scrambled successfully: {}".format(oldIP)
